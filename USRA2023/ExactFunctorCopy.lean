@@ -17,6 +17,16 @@ instance (F : C ⥤ D) [PreservesFiniteLimits F] [PreservesFiniteColimits F] : E
 example (F : C ⥤ D) [Exact F] : PreservesFiniteLimits F := inferInstance
 example (F : C ⥤ D) [Exact F] : PreservesFiniteColimits F := inferInstance
 
+lemma exactIsoExact (F G : C ⥤ D) [Exact F] (h : F ≅ G) : Exact G := by 
+  haveI : PreservesFiniteLimits G := {
+    preservesFiniteLimits := fun J => {preservesLimit := by intros K; exact preservesLimitOfNatIso K h}}
+
+  haveI : PreservesFiniteColimits G := {
+    preservesFiniteColimits := fun J => {preservesColimit := by intros K; exact preservesColimitOfNatIso K h}}
+
+  infer_instance
+    
+
 class AB4 (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐] where
   exact (α : Type v) : Exact (colim : (Discrete α ⥤ 𝓐) ⥤ 𝓐)
 
@@ -50,9 +60,7 @@ def coproductColimitCocone {α : Type v} (X : α → C) [HasColimits C] :
   pt := ∐ X
   ι := {
     app := fun S => show ∐ (fun s : S => X s) ⟶ ∐ X from 
-      Sigma.desc fun i => Sigma.ι _ i.1
-    naturality := sorry
-  }
+      Sigma.desc fun i => Sigma.ι _ i.1}
 
 @[simps]
 noncomputable
