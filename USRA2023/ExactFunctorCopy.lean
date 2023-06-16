@@ -3,6 +3,7 @@ import Mathlib.CategoryTheory.Limits.Shapes.Products
 import Mathlib.CategoryTheory.Limits.Filtered
 import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import Mathlib.CategoryTheory.Abelian.Basic
+import Mathlib.CategoryTheory.Adjunction.Limits
 
 namespace CategoryTheory.Functor
 
@@ -35,6 +36,10 @@ instance (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐]
 
 class AB5 (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasColimits 𝓐] where
   exact (J : Type v) [SmallCategory J] [IsFiltered J] : Exact (colim : (J ⥤ 𝓐) ⥤ 𝓐)
+
+/- Possibly might help later? -/
+noncomputable instance (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐] 
+: PreservesColimitsOfSize (colim : (Discrete α ⥤ 𝓐) ⥤ 𝓐) := Adjunction.leftAdjointPreservesColimits colimConstAdj
 
 variable {C : Type _} [Category.{v} C] 
 
@@ -79,18 +84,16 @@ def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] :
     ∐ X ≅ colimit (coproductColimitDiagram X) := 
   (coproductColimitCoconeIsColimit X).coconePointUniqueUpToIso (colimit.isColimit _)
 
-/-
-    where
-  hom := Sigma.desc fun a => 
-    letI e1 : X a ⟶ ∐ (fun b : ({a} : Finset α) => X b) := 
-      Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
-    letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ colimit (coproductColimitDiagram X) := 
-      colimit.ι (coproductColimitDiagram X) {a}
-    e1 ≫ e2
-  inv := colimit.desc _ (coproductColimitCocone X)
-  hom_inv_id := sorry
-  inv_hom_id := sorry
--/
+/- where
+    hom := Sigma.desc fun a => 
+      letI e1 : X a ⟶ ∐ (fun b : ({a} : Finset α) => X b) := 
+        Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
+      letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ colimit (coproductColimitDiagram X) := 
+        colimit.ι (coproductColimitDiagram X) {a}
+      e1 ≫ e2
+    inv := colimit.desc _ (coproductColimitCocone X)
+    inv_hom_id := sorry
+    hom_inv_id := by aesop_cat -/
 
 instance (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasColimits 𝓐] [AB5 𝓐] : AB4 𝓐 := by
   constructor
