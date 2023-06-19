@@ -12,6 +12,7 @@ open CategoryTheory Limits
 
 variable {C : Type _} [Category C] {D : Type _} [Category D]
 
+/-- TODO-/
 class Exact (F : C ⥤ D) extends PreservesFiniteLimits F, PreservesFiniteColimits F
 
 instance (F : C ⥤ D) [PreservesFiniteLimits F] [PreservesFiniteColimits F] : Exact F where
@@ -19,17 +20,18 @@ instance (F : C ⥤ D) [PreservesFiniteLimits F] [PreservesFiniteColimits F] : E
 example (F : C ⥤ D) [Exact F] : PreservesFiniteLimits F := inferInstance
 example (F : C ⥤ D) [Exact F] : PreservesFiniteColimits F := inferInstance
 
-lemma isoPreservesFiniteLimits {F G : C ⥤ D} [PreservesFiniteLimits F] (h : F ≅ G) 
-  : PreservesFiniteLimits G := {preservesFiniteLimits := 
-      fun J => {preservesLimit := by intros K; exact preservesLimitOfNatIso K h}} 
+/-- TODO-/
+def preservesFiniteLimitsOfNatIso (F : C ⥤ D) {G : C ⥤ D} [PreservesFiniteLimits F] (h : F ≅ G) :
+  PreservesFiniteLimits G where preservesFiniteLimits _ := ⟨preservesLimitOfNatIso _ h⟩
 
-lemma isoPreservesFiniteColimits {F G : C ⥤ D} [PreservesFiniteColimits F] (h : F ≅ G) 
-  : PreservesFiniteColimits G := {preservesFiniteColimits := 
-      fun J => {preservesColimit := by intros K; exact preservesColimitOfNatIso K h}} 
+/-- TODO-/
+def preservesFiniteColimitsOfNatIso (F : C ⥤ D) {G : C ⥤ D} [PreservesFiniteColimits F] (h : F ≅ G) : 
+  PreservesFiniteColimits G where preservesFiniteColimits _ := ⟨preservesColimitOfNatIso _ h⟩    
 
-lemma isoPreservesExact (F G : C ⥤ D) [Exact F] (h : F ≅ G) : Exact G :=
-  haveI : PreservesFiniteLimits G := isoPreservesFiniteLimits h
-  haveI : PreservesFiniteColimits G := isoPreservesFiniteColimits h
+/-- TODO-/
+def preservesExactOfNatIso (F : C ⥤ D) {G : C ⥤ D} [Exact F] (h : F ≅ G) : Exact G := 
+  letI : PreservesFiniteLimits G := preservesFiniteLimitsOfNatIso _ h
+  letI : PreservesFiniteColimits G := preservesFiniteColimitsOfNatIso _ h
   inferInstance
 
 class AB4 (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐] where
@@ -69,14 +71,7 @@ def coproductColimitCocone {α : Type v} (X : α → C) [HasColimits C] :
   pt := ∐ X
   ι := {
     app := fun S => show ∐ (fun s : S => X s) ⟶ ∐ X from 
-      Sigma.desc fun i => Sigma.ι _ i.1
-    naturality := fun S T F => by {
-      simp
-      dsimp [coproductColimitDiagramMap]
-      ext s
-      simp
-    }
-  }
+      Sigma.desc fun i => Sigma.ι _ i.1 }
 
 -- def coproductCoconeFun {α : Type v} (X : α → C) [HasColimits C] (c : Cocone (coproductColimitDiagram X)) : 
 --   Cocone (Discrete.functor X) where
@@ -98,14 +93,14 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
     letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ S.pt := S.ι.app {a}
     e1 ≫ e2
   fac := fun c S => by
-    simp
+    dsimp only [coproductColimitDiagram_obj, coproductColimitCocone_pt, 
+      const_obj_obj, coproductColimitCocone_ι_app]
     apply Sigma.hom_ext
-    intro s
-    simp
-    have leq : {↑s} ≤ S := Iff.mpr Finset.subset_iff (fun x xx =>
-      by simp [Finset.eq_of_mem_singleton xx])
-    simp only [←colimit.ι_desc]
-    rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
+    rintro ⟨b,hb⟩   
+    simp only [colimit.ι_desc_assoc, Discrete.functor_obj, Cofan.mk_pt, 
+      Cofan.mk_ι_app, colimit.ι_desc]
+    let e : ({b} : Finset α) ⟶ S := homOfLE (by simpa using hb)
+    rw [← c.w e, ← Category.assoc] ; congr
     simp
   uniq :=  fun c σ h => by {
     simp
