@@ -78,7 +78,6 @@ def coproductColimitCocone {α : Type v} (X : α → C) [HasColimits C] :
     }
   }
 
-
 -- def coproductCoconeFun {α : Type v} (X : α → C) [HasColimits C] (c : Cocone (coproductColimitDiagram X)) : 
 --   Cocone (Discrete.functor X) where
 --   pt := c.pt
@@ -89,8 +88,6 @@ def coproductColimitCocone {α : Type v} (X : α → C) [HasColimits C] :
 --     }
 --   }
 
-
-
 @[simps]
 noncomputable
 def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C] : 
@@ -100,7 +97,7 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
       Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
     letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ S.pt := S.ι.app {a}
     e1 ≫ e2
-  fac := fun c S => by {
+  fac := fun c S => by
     simp
     apply Sigma.hom_ext
     intro s
@@ -108,11 +105,8 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
     have leq : {↑s} ≤ S := Iff.mpr Finset.subset_iff (fun x xx =>
       by simp [Finset.eq_of_mem_singleton xx])
     simp only [←colimit.ι_desc]
-    have leq_hom : {↑s} ⟶ S := homOfLE leq
     rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
     simp
-    
-  }
   uniq :=  fun c σ h => by {
     simp only [coproductColimitCocone_pt]
     apply Sigma.hom_ext
@@ -126,22 +120,27 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
 
 noncomputable
 def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
-    ∐ X ≅ colimit (coproductColimitDiagram X) where
-    hom := Sigma.desc fun a => 
-      letI e1 : X a ⟶ ∐ (fun b : ({a} : Finset α) => X b) := 
-        Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
-      letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ colimit (coproductColimitDiagram X) := 
-        colimit.ι (coproductColimitDiagram X) {a}
-      e1 ≫ e2
-    inv := colimit.desc (coproductColimitDiagram X) (coproductColimitCocone X)
-    inv_hom_id := by 
-      ext j; simp
-      ext jj; simp
-      have leq : {↑jj} ≤ j := Iff.mpr Finset.subset_iff (fun _ x =>
-       by simp [Finset.eq_of_mem_singleton x])
-      rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
-      simp
-    hom_inv_id := by aesop_cat
+    ∐ X ≅ colimit (coproductColimitDiagram X) := 
+  (coproductColimitCoconeIsColimit X).coconePointUniqueUpToIso (colimit.isColimit _)
+
+-- noncomputable
+-- def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
+--     ∐ X ≅ colimit (coproductColimitDiagram X) where
+--     hom := Sigma.desc fun a => 
+--       letI e1 : X a ⟶ ∐ (fun b : ({a} : Finset α) => X b) := 
+--         Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
+--       letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ colimit (coproductColimitDiagram X) := 
+--         colimit.ι (coproductColimitDiagram X) {a}
+--       e1 ≫ e2
+--     inv := colimit.desc (coproductColimitDiagram X) (coproductColimitCocone X)
+--     inv_hom_id := by 
+--       ext j; simp
+--       ext jj; simp
+--       have leq : {↑jj} ≤ j := Iff.mpr Finset.subset_iff (fun _ x =>
+--        by simp [Finset.eq_of_mem_singleton x])
+--       rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
+--       simp
+--     hom_inv_id := by aesop_cat
 
 instance (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasColimits 𝓐] [AB5 𝓐] : AB4 𝓐 := by
   constructor
