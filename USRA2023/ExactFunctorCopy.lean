@@ -29,10 +29,13 @@ def preservesFiniteColimitsOfNatIso (F : C ⥤ D) {G : C ⥤ D} [PreservesFinite
   PreservesFiniteColimits G where preservesFiniteColimits _ := ⟨preservesColimitOfNatIso _ h⟩    
 
 /-- TODO-/
-def preservesExactOfNatIso (F : C ⥤ D) {G : C ⥤ D} [Exact F] (h : F ≅ G) : Exact G := 
+def exactOfNatIso (F : C ⥤ D) {G : C ⥤ D} [Exact F] (h : F ≅ G) : Exact G := 
   letI : PreservesFiniteLimits G := preservesFiniteLimitsOfNatIso _ h
   letI : PreservesFiniteColimits G := preservesFiniteColimitsOfNatIso _ h
   inferInstance
+
+def exactComp {E : Type _} [Category E] 
+  (F : C ⥤ D) (G : D ⥤ E) [Exact F] [Exact G] : Exact (F ⋙ G) := sorry
 
 class AB4 (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐] where
   exact (α : Type v) : Exact (colim : (Discrete α ⥤ 𝓐) ⥤ 𝓐)
@@ -137,12 +140,63 @@ def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] :
 --       simp
 --     hom_inv_id := by aesop_cat
 
-instance (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasColimits 𝓐] [AB5 𝓐] : AB4 𝓐 := by
-  constructor
-  intro α
-  haveI : PreservesFiniteColimits (colim : (Discrete α ⥤ 𝓐) ⥤ 𝓐) 
-    := {preservesFiniteColimits := fun J => PreservesFiniteColimits.preservesFiniteColimits J}
+noncomputable
+def coproductDiagramNatTrans {α : Type v} {X Y : α → C} (η : X ⟶ Y) [HasColimits C] :
+    coproductColimitDiagram X ⟶ coproductColimitDiagram Y where
+  app S := Limits.Sigma.map fun b => η b
+
+noncomputable
+def changeCoproductCocone {α : Type v} {X Y : α → C} (η : X ⟶ Y) [HasColimits C] :
+    Cocone (coproductColimitDiagram X) where
+  pt := colimit (coproductColimitDiagram Y)
+  ι := {
+    app := fun S => (coproductDiagramNatTrans η).app _ ≫ colimit.ι _ S
+    naturality := sorry
+  }
+
+noncomputable
+def finsetColimitDiagram (α : Type v) [HasColimits C] : 
+    (Discrete α ⥤ C) ⥤ C  where
+  obj := fun F => colimit (coproductColimitDiagram (F.obj ∘ Discrete.mk))
+  map := fun {F G} η => colimit.desc _ (changeCoproductCocone fun b => η.app _)
+  map_id := sorry
+  map_comp := sorry
+
+def discreteToFinset (α : Type v) [HasColimits C] :
+    (Discrete α ⥤ C) ⥤ (Finset α ⥤ C) where
+  obj := fun F => coproductColimitDiagram (F.obj ∘ Discrete.mk) 
+  map := _
+  map_id := _
+  map_comp := _ 
+
+noncomputable
+def finsetColimitDiagram' (α : Type v) [HasColimits C] :
+    (Finset α ⥤ C) ⥤ C := colim 
+
+def actuallyUsefulIso (α : Type v) [HasColimits C] : 
+  (colim : (Discrete α ⥤ C) ⥤ C) ≅  
+  discreteToFinset α ⋙ colim := sorry
+
+noncomputable
+def coproductFunctorIsoColimit (α : Type v) [HasColimits C] :
+    (colim : (Discrete α ⥤ C) ⥤ C) ≅ finsetColimitDiagram α :=
+  NatIso.ofComponents (fun F => 
+    HasColimit.isoOfNatIso (Discrete.natIsoFunctor (F := F))
+    ≪≫ coproductIsoColimit _) 
   sorry
 
+noncomputable
+instance [Abelian C] [HasColimits C] [AB5 C] : AB4 C := by
+  constructor
+  intro α
+  haveI : PreservesFiniteColimits (colim : (Discrete α ⥤ C) ⥤ C) 
+    := {preservesFiniteColimits := fun J => PreservesFiniteColimits.preservesFiniteColimits J}
+  suffices Exact (discreteToFinset (C := C) α ⋙ colim) by 
+    apply exactOfNatIso _ (actuallyUsefulIso α).symm
+  letI : IsFiltered (Finset α) := sorry 
+  letI : Exact (colim : (Finset α ⥤ C) ⥤ C) := AB5.exact _
+  suffices Exact (discreteToFinset (C := C) α) by
+    apply exactComp  
+  sorry
 
 end CategoryTheory.Functor
