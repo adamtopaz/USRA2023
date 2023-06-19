@@ -103,13 +103,11 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
     rw [← c.w e, ← Category.assoc] ; congr
     simp
   uniq :=  fun c σ h => by {
-    simp only [coproductColimitCocone_pt]
+    dsimp only [coproductColimitCocone_pt]
     apply Sigma.hom_ext
     intros s
-    specialize h {↑s}
-    simp only [colimit.ι_desc, Cofan.mk_pt, Cofan.mk_ι_app]
-    rw [← h]
-    simp only [coproductColimitDiagram_obj, coproductColimitCocone_pt, const_obj_obj,
+    simp only [colimit.ι_desc, Cofan.mk_pt, Cofan.mk_ι_app, ← h {s}, 
+      coproductColimitDiagram_obj, coproductColimitCocone_pt, const_obj_obj,
       coproductColimitCocone_ι_app, colimit.ι_desc_assoc, Discrete.functor_obj,
       Cofan.mk_pt, Cofan.mk_ι_app]
   }
