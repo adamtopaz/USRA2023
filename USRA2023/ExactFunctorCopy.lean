@@ -114,8 +114,9 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
     specialize h {↑s}
     simp only [colimit.ι_desc, Cofan.mk_pt, Cofan.mk_ι_app]
     rw [← h]
-    simp only [coproductColimitDiagram_obj, coproductColimitCocone_pt, const_obj_obj, coproductColimitCocone_ι_app,
-      colimit.ι_desc_assoc, Discrete.functor_obj, Cofan.mk_pt, Cofan.mk_ι_app]
+    simp only [coproductColimitDiagram_obj, coproductColimitCocone_pt, const_obj_obj,
+      coproductColimitCocone_ι_app, colimit.ι_desc_assoc, Discrete.functor_obj,
+      Cofan.mk_pt, Cofan.mk_ι_app]
   }
 
 noncomputable
