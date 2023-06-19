@@ -4,6 +4,7 @@ import Mathlib.CategoryTheory.Limits.Filtered
 import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import Mathlib.CategoryTheory.Abelian.Basic
 
+
 namespace CategoryTheory.Functor
 
 open CategoryTheory Limits
@@ -51,8 +52,26 @@ def coproductColimitCocone {α : Type v} (X : α → C) [HasColimits C] :
   ι := {
     app := fun S => show ∐ (fun s : S => X s) ⟶ ∐ X from 
       Sigma.desc fun i => Sigma.ι _ i.1
-    naturality := sorry
+    naturality := fun S T F => by {
+      simp
+      dsimp [coproductColimitDiagramMap]
+      ext s
+      simp
+    }
   }
+
+
+-- def coproductCoconeFun {α : Type v} (X : α → C) [HasColimits C] (c : Cocone (coproductColimitDiagram X)) : 
+--   Cocone (Discrete.functor X) where
+--   pt := c.pt
+--   ι := {
+--     app := fun I => by {
+--       intro a
+
+--     }
+--   }
+
+
 
 @[simps]
 noncomputable
@@ -63,8 +82,29 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
       Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
     letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ S.pt := S.ι.app {a}
     e1 ≫ e2
-  fac := sorry
-  uniq := sorry
+  fac := fun c S => by {
+    simp
+    apply Sigma.hom_ext
+    intro s
+    simp
+    have leq : {↑s} ≤ S := Iff.mpr Finset.subset_iff (fun x xx =>
+      by simp [Finset.eq_of_mem_singleton xx])
+    simp only [←colimit.ι_desc]
+    have leq_hom : {↑s} ⟶ S := homOfLE leq
+    rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
+    simp
+    
+  }
+  uniq :=  fun c σ h => by {
+    simp
+    apply Sigma.hom_ext
+    intros s
+    specialize h {↑s}
+    dsimp [coproductColimitCocone] at h
+    simp
+    rw [← h]
+    simp
+  }
 
 noncomputable
 def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
