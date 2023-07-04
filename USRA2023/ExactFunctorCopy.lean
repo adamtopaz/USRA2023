@@ -116,10 +116,31 @@ def coproductColimitCoconeIsColimit {α : Type v} (X : α → C) [HasColimits C]
       Cofan.mk_pt, Cofan.mk_ι_app]
   }
 
+-- noncomputable
+-- def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
+--     ∐ X ≅ colimit (coproductColimitDiagram X) := 
+--   (coproductColimitCoconeIsColimit X).coconePointUniqueUpToIso (colimit.isColimit _)
+
 noncomputable
 def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
-    ∐ X ≅ colimit (coproductColimitDiagram X) := 
-  (coproductColimitCoconeIsColimit X).coconePointUniqueUpToIso (colimit.isColimit _)
+    ∐ X ≅ colimit (coproductColimitDiagram X) where
+    hom := Sigma.desc fun a => 
+      letI e1 : X a ⟶ ∐ (fun b : ({a} : Finset α) => X b) := 
+        Sigma.ι (fun b : ({a} : Finset α) => X b) ⟨a, by simp⟩
+      letI e2 : ∐ (fun b : ({a} : Finset α) => X b) ⟶ colimit (coproductColimitDiagram X) := 
+        colimit.ι (coproductColimitDiagram X) {a}
+      e1 ≫ e2
+    inv := colimit.desc (coproductColimitDiagram X) (coproductColimitCocone X)
+    inv_hom_id := by 
+      ext j
+      simp only [coproductColimitDiagram_obj, colimit.ι_desc_assoc, coproductColimitCocone_ι_app]
+      ext jj
+      simp only [colimit.ι_desc_assoc, Cofan.mk_ι_app, colimit.ι_desc]
+      have leq : {↑jj} ≤ j := Iff.mpr Finset.subset_iff (fun _ x =>
+       by simp [Finset.eq_of_mem_singleton x])
+      rw [←(colimit.w (coproductColimitDiagram X) <| homOfLE leq)]
+      simp
+    hom_inv_id := by aesop_cat
 
 -- noncomputable
 -- def coproductIsoColimit {α : Type v} (X : α → C) [HasColimits C] : 
@@ -151,7 +172,7 @@ def changeCoproductCocone {α : Type v} {X Y : α → C} (η : X ⟶ Y) [HasColi
   pt := colimit (coproductColimitDiagram Y)
   ι := {
     app := fun S => (coproductDiagramNatTrans η).app _ ≫ colimit.ι _ S
-    naturality := fun X₁ Y₁ f => by {
+    naturality := fun X₁ Y₁ f => by
       apply Sigma.hom_ext
       intro s
       simp only [coproductDiagramNatTrans]
@@ -172,90 +193,48 @@ def finsetColimitDiagram (α : Type v) [HasColimits C] :
     apply colimit.hom_ext
     intro j₁
     apply colimit.hom_ext
-    intro s
-    have h : (coproductDiagramNatTrans fun s => 𝟙 (X.obj { as := s})).app j₁ = 𝟙 _ := by {
+    intro b
+    have h : (coproductDiagramNatTrans fun b => 𝟙 (X.obj { as := b })).app j₁ = 𝟙 _ := by {
       dsimp only [coproductColimitDiagram_obj]
       simp only [coproductDiagramNatTrans]
       ext
       simp
-    }
     simp [changeCoproductCocone, h]
   }
 
 noncomputable
 def discreteToFinsetMap {α : Type v} [HasColimits C] {F G : Discrete α ⥤ C} (f : F ⟶ G) :
     F.obj ∘ Discrete.mk ⟶ G.obj ∘ Discrete.mk := by {have h := f.app; aesop_cat}
-  --(fun b => F.obj {as := b}) ⟶ (fun b => G.obj {as := b}) := by {have h := f.app; aesop_cat}
-  --F.obj ∘ Discrete.mk ⟶ G.obj ∘ Discrete.mk := by {have h := f.app; aesop_cat}
   
 noncomputable
 def discreteToFinset (α : Type v) [HasColimits C] :
     (Discrete α ⥤ C) ⥤ (Finset α ⥤ C) where
-  obj := fun F => coproductColimitDiagram (F.obj ∘ Discrete.mk) 
+  obj := fun F => coproductColimitDiagram (F.obj ∘ Discrete.mk)--(fun b => F.obj {as := b}) --
   map := fun {F G} f => coproductDiagramNatTrans (discreteToFinsetMap f)
-  map_id := fun X => by {
+  map_id := fun X => by 
     ext j
-    have h : (coproductDiagramNatTrans fun b => 𝟙 (X.obj { as := b })).app j = 𝟙 _ := by
-      simp only [coproductColimitDiagram_obj, coproductDiagramNatTrans]
+    have h : (coproductDiagramNatTrans fun b => 𝟙 (X.obj { as := b })).app j = 𝟙 _ := by {
+      dsimp only [coproductColimitDiagram_obj]
+      simp only [coproductDiagramNatTrans]
       ext
-      simp only [ι_colimMap, Discrete.functor_obj, Discrete.natTrans_app, Category.id_comp, Category.comp_id]
+      simp
+    }
     exact h
   }
+  map_comp := fun {X Y Z} f g => by {
+    simp only [discreteToFinsetMap, coproductDiagramNatTrans]
+    aesop_cat
+  }
+
+def exactDiscreteToFinset (α : Type v) [HasColimits C] : Exact (discreteToFinset (C := C) α) := sorry
 
 noncomputable
 def finsetColimitDiagram' (α : Type v) [HasColimits C] :
     (Finset α ⥤ C) ⥤ C := colim 
 
-noncomputable
-def coconeJ {α : Type v} [HasColimits C] (J : Discrete α ⥤ C) : Cocone J where
-  pt := ∐ (J.obj ∘ Discrete.mk)
-  ι := {
-    app := fun s => Sigma.ι (J.obj ∘ Discrete.mk) (Discrete.as s)
-    naturality := fun s t i => by {
-      letI := Discrete.eq_of_hom i      --why did this not fit the names of others?
-      letI := Discrete.eqToIso (Discrete.eq_of_hom i)
-      --letI := (Discrete.functor_map_id J i)
-      simp
-      sorry
-    }
-  }
-
-noncomputable
-def coconeJIsColimit {α : Type v} [HasColimits C] (J : Discrete α ⥤ C) : IsColimit (coconeJ J) where
-  desc := fun F => by {
-    apply Sigma.desc
-    intro s
-    apply F.ι.app
-  }
-  fac := fun F s => by {
-    dsimp only [coconeJ]
-    simp
-  }
-  uniq := fun F f h => by {
-    simp only
-    dsimp [coconeJ] at h
-    
-  }
-
-
-def actuallyUsefulIso' (α : Type v) [HasColimits C] (J : Discrete α ⥤ C) : (colim : (Discrete α ⥤ C) ⥤ C).obj J ≅
-  (discreteToFinset α ⋙ colim).obj J := by {
-    dsimp [discreteToFinset]
-    let X : (α → C) := J.obj ∘ Discrete.mk
-    letI := coproductIsoColimit X
-    letI := IsColimit.uniqueUpToIso (colimit.isColimit J) (coconeJIsColimit J)
-    dsimp [coconeJ] at this
-    have h : (colimit J ≅ ∐ J.obj ∘ Discrete.mk) := {
-      hom := {this.hom}
-      inv := {this.inv}
-    }
-  }
-
 def actuallyUsefulIso (α : Type v) [HasColimits C] : 
   (colim : (Discrete α ⥤ C) ⥤ C) ≅  
-  discreteToFinset α ⋙ colim := by {
-    sorry
-  }
+  discreteToFinset α ⋙ colim := sorry
 
 noncomputable
 def coproductFunctorIsoColimit (α : Type v) [HasColimits C] :
