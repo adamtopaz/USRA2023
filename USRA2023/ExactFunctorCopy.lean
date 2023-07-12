@@ -4,6 +4,7 @@ import Mathlib.CategoryTheory.Limits.Filtered
 import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import Mathlib.CategoryTheory.Abelian.Basic
 import Mathlib.CategoryTheory.Adjunction.Limits
+import Mathlib.CategoryTheory.Limits.FunctorCategory
 
 
 namespace CategoryTheory.Functor
@@ -325,10 +326,42 @@ def idk2 {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory
 -- the reason is that finite (co)products are isomorphic to finite biproducts, which are both limits and colimits, and
 -- thus commute with both limits and colimits.  
 
+#check evaluation
+
+/-
+
+If `K : J ⥤ (C ⥤ D)`, `X : C`, then 
+
+`(colimit K).obj X ≅ colimit (j ↦ (K.obj j).obj X)`
+
+`K ⋙ evaluation at X : J ⥤ D`
+
+-/
+
 noncomputable
 def preservesColimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
   PreservesColimitsOfShape J (discreteToFinset (C := C) α) where
-    preservesColimit := idk _
+    preservesColimit {K} := {
+      preserves := fun {E} hE => {
+        desc := fun T => {
+          app := fun A => Sigma.desc fun ⟨q, hq⟩ => 
+            let K' := K ⋙ (evaluation _ _).obj ⟨q⟩ 
+            let E' : Cocone K' := Functor.mapCocone ((evaluation _ _).obj ⟨q⟩) E
+            let hE' : IsColimit E' := isColimitOfPreserves _ hE
+            by
+              dsimp
+              refine hE'.desc ⟨_, fun j => ?_, ?_⟩ 
+              · dsimp
+                refine ?_ ≫ (T.ι.app j).app {q} ≫ T.pt.map (homOfLE <| by simpa)
+                · dsimp [discreteToFinset]
+                  refine Sigma.ι (fun (s : ({q} : Finset α)) => (K.obj j).obj ⟨s⟩) ⟨q, by simp⟩
+              · sorry
+          naturality := sorry
+        }
+        fac := sorry
+        uniq := sorry
+      }
+    }
 
 noncomputable
 def preservesLimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
