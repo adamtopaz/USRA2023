@@ -235,10 +235,119 @@ def discreteToFinset (α : Type v) [HasColimits C] :
     simp only [coproductDiagramNatTrans]
     aesop_cat
 
+-- def discreteToFinsetReflectionHom {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (F G : J ⥤ (Discrete α ⥤ C))
+--   (ι : (F ⋙ discreteToFinset α) ⟶ (G ⋙ discreteToFinset α)) : F.obj i ⟶ G.obj i where
+--     app :=
+
+
+    
+
+
+--the natural transformation we get by restricting to singletons
+-- def discreteToFinsetReflectionNat {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (F G : J ⥤ (Discrete α ⥤ C))
+--   (h : (F ⋙ discreteToFinset α) ⟶ (G ⋙ discreteToFinset α)) : F ⟶ G where
+--     app := fun i => {
+--       app := fun a => by {
+--         sorry
+--       }
+--     }
+--     naturality := sorry
+  
+
+def discreteCoconeFromFinsetCocone {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C)) 
+  (s : Cocone (K ⋙ discreteToFinset α)) : Cocone K where
+    pt := Discrete.functor (fun a => s.pt.obj {a})
+    ι := {
+      app := fun j => Discrete.natTrans (fun a => by {
+        simp only [const_obj_obj]
+        have h : (K.obj j).obj a ≅ ((K ⋙ discreteToFinset α).obj j).obj {a.as} := by
+          sorry
+        letI := (s.ι.app j).app {a.as}
+        sorry
+      })
+          
+      naturality := sorry
+
+    }
+    -- by
+    --   have f : (const J).obj s.pt ⟶ (const J).obj (Discrete.functor fun a => s.pt.obj {a}) ⋙ discreteToFinset α := by {
+    --     sorry
+    --   }
+    --   exact (discreteToFinsetReflectionNat K _ (s.ι ≫ f))
+
+
+-- will be where biproducts come into play (or at least in the limit equivalent)
+def discreteToFinsetOnFromFinsetCoconeIso {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C)) 
+  (s : Cocone (K ⋙ discreteToFinset α)) : ((discreteToFinset (C := C) α).mapCocone (discreteCoconeFromFinsetCocone K s)).pt ≅ s.pt where
+    hom := {
+      app := sorry
+      naturality := sorry
+    }
+    inv := sorry
+
+      
+
+-- def inclHom {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C)) 
+--   (s : Cocone (K ⋙ discreteToFinset α)) : (discreteCoconeFromFinsetCocone K s).pt ⟶ s.pt where
+
+noncomputable
+def idk {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C))  :
+  PreservesColimit K (discreteToFinset (C := C) α) where
+    preserves := fun c => {
+      desc := fun s => ((discreteToFinset (C := C) α).mapCoconeMorphism ({ Hom := (c.desc (discreteCoconeFromFinsetCocone K s)) })).Hom ≫ 
+        (discreteToFinsetOnFromFinsetCoconeIso K s).hom
+      fac := fun s j => by {
+        simp only [comp_obj, mapCocone_pt, const_obj_obj, mapCocone_ι_app]
+        
+
+      }
+      uniq := by {
+
+      }
+    }
+
+def discreteCoconeFromFinsetCone {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C)) 
+  (s : Cone (K ⋙ discreteToFinset α)) : Cone K where
+    pt := Discrete.functor (fun a => s.pt.obj {a})
+    π := sorry
+
+noncomputable
+def idk2 {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C))  :
+  PreservesLimit K (discreteToFinset (C := C) α) where
+    preserves := fun c => {
+      lift := sorry
+      fac := fun s j => by {
+
+      }
+      uniq := by {
+
+      }
+    }
+
 -- This will use the fact that finite products (or coproducts) in an abelian category are exact.
 -- the reason is that finite (co)products are isomorphic to finite biproducts, which are both limits and colimits, and
 -- thus commute with both limits and colimits.  
-def exactDiscreteToFinset (α : Type v) [HasColimits C] : Exact (discreteToFinset (C := C) α) := sorry
+
+noncomputable
+def preservesColimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
+  PreservesColimitsOfShape J (discreteToFinset (C := C) α) where
+    preservesColimit := idk _
+
+noncomputable
+def preservesLimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
+  PreservesLimitsOfShape J (discreteToFinset (C := C) α) where
+    preservesLimit := idk2 _
+
+-- instance (α : Type v) [HasCoLimits C] : PreservesFiniteLimits (discreteToFinset (C := C) α) := sorry
+
+
+def rightExactDiscreteToFinset (α : Type v) [HasColimits C] : PreservesFiniteColimits (discreteToFinset (C := C) α) where
+  preservesFiniteColimits := fun J => preservesColimitsOfFiniteShapeDiscreteToFinset _ J
+
+def leftExactDiscreteToFinset (α : Type v) [HasColimits C] : PreservesFiniteLimits (discreteToFinset (C := C) α) where
+  preservesFiniteLimits := fun J => preservesLimitsOfFiniteShapeDiscreteToFinset _ J
+
+def exactDiscreteToFinset (α : Type v) [HasColimits C] : Exact (discreteToFinset (C := C) α) := 
 
 noncomputable
 def finsetColimitDiagram' (α : Type v) [HasColimits C] :
