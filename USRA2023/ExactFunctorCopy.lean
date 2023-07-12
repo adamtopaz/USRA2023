@@ -284,6 +284,8 @@ def discreteToFinsetOnFromFinsetCoconeIso {α : Type v} [HasColimits C] {J : Typ
       naturality := sorry
     }
     inv := sorry
+    hom_inv_id := sorry
+    inv_hom_id := sorry
 
       
 
@@ -296,14 +298,11 @@ def idk {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory 
     preserves := fun c => {
       desc := fun s => ((discreteToFinset (C := C) α).mapCoconeMorphism ({ Hom := (c.desc (discreteCoconeFromFinsetCocone K s)) })).Hom ≫ 
         (discreteToFinsetOnFromFinsetCoconeIso K s).hom
-      fac := fun s j => by {
+      fac := fun s j => by
         simp only [comp_obj, mapCocone_pt, const_obj_obj, mapCocone_ι_app]
-        
-
-      }
-      uniq := by {
-
-      }
+        sorry
+      uniq := by 
+        sorry
     }
 
 def discreteCoconeFromFinsetCone {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] (K : J ⥤ (Discrete α ⥤ C)) 
@@ -316,12 +315,10 @@ def idk2 {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory
   PreservesLimit K (discreteToFinset (C := C) α) where
     preserves := fun c => {
       lift := sorry
-      fac := fun s j => by {
-
-      }
-      uniq := by {
-
-      }
+      fac := fun s j => by 
+        sorry
+      uniq := by 
+        sorry
     }
 
 -- This will use the fact that finite products (or coproducts) in an abelian category are exact.
@@ -341,13 +338,16 @@ def preservesLimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (
 -- instance (α : Type v) [HasCoLimits C] : PreservesFiniteLimits (discreteToFinset (C := C) α) := sorry
 
 
+noncomputable
 def rightExactDiscreteToFinset (α : Type v) [HasColimits C] : PreservesFiniteColimits (discreteToFinset (C := C) α) where
   preservesFiniteColimits := fun J => preservesColimitsOfFiniteShapeDiscreteToFinset _ J
 
+noncomputable
 def leftExactDiscreteToFinset (α : Type v) [HasColimits C] : PreservesFiniteLimits (discreteToFinset (C := C) α) where
   preservesFiniteLimits := fun J => preservesLimitsOfFiniteShapeDiscreteToFinset _ J
 
 def exactDiscreteToFinset (α : Type v) [HasColimits C] : Exact (discreteToFinset (C := C) α) := 
+  sorry
 
 noncomputable
 def finsetColimitDiagram' (α : Type v) [HasColimits C] :
