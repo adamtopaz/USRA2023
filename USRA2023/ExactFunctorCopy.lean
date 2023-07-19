@@ -5,6 +5,7 @@ import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import Mathlib.CategoryTheory.Abelian.Basic
 import Mathlib.CategoryTheory.Adjunction.Limits
 import Mathlib.CategoryTheory.Limits.FunctorCategory
+import Mathlib.Tactic
 
 
 namespace CategoryTheory.Functor
@@ -221,8 +222,8 @@ def discreteToFinsetMap {α : Type v} [HasColimits C] {F G : Discrete α ⥤ C} 
     F.obj ∘ Discrete.mk ⟶ G.obj ∘ Discrete.mk := --by {have h := f.app; aesop_cat}
   fun _ => f.app _
 -/
-
-@[simps]  
+  
+@[simps]
 noncomputable
 def discreteToFinset (α : Type v) [HasColimits C] :
     (Discrete α ⥤ C) ⥤ (Finset α ⥤ C) where
@@ -342,35 +343,110 @@ If `K : J ⥤ (C ⥤ D)`, `X : C`, then
 
 -/
 
+namespace preservesColimitAux
+
+@[simps]
 noncomputable
-def preservesColimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
+def foo {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J]
+    {K : J ⥤ Discrete α ⥤ C} (T : Cocone (K ⋙ discreteToFinset α)) 
+    {A : Finset α} (q : α) (hq : q ∈ A) :
+    Cocone (K ⋙ (evaluation _ _).obj ⟨q⟩) where
+  pt := T.pt.obj A
+  ι := {
+    app := fun j => Sigma.ι (fun (s : ({q} : Finset α)) => (K.obj j).obj ⟨s⟩) ⟨q, by simp⟩ ≫ 
+      (T.ι.app j).app {q} ≫ T.pt.map (homOfLE <| by simpa)
+    naturality := by
+      intro i j f
+      dsimp
+      simp only [Category.comp_id]
+      have Tw := T.w f
+      apply_fun (fun e => e.app {q}) at Tw
+      simp [← Tw]
+  }
+
+@[simps]
+noncomputable
+def desc {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J]
+    {K : J ⥤ Discrete α ⥤ C} {E : Cocone K} (hE : IsColimit E) (T : Cocone (K ⋙ discreteToFinset α)) :
+    ((discreteToFinset α).mapCocone E).pt ⟶ T.pt where
+  app := fun A => Sigma.desc fun ⟨q, hq⟩ => 
+    let K' := K ⋙ (evaluation _ _).obj ⟨q⟩ 
+    let E' : Cocone K' := Functor.mapCocone ((evaluation _ _).obj ⟨q⟩) E
+    let hE' : IsColimit E' := isColimitOfPreserves _ hE
+    by exact hE'.desc (foo T q hq)
+  naturality := by
+    intro A B f
+    dsimp 
+    apply Sigma.hom_ext ; rintro ⟨a,ha⟩   
+    simp only [colimit.ι_desc_assoc, Discrete.functor_obj, Cofan.mk_pt, 
+      Cofan.mk_ι_app, colimit.ι_desc]
+    let E' := ((evaluation (Discrete α) C).obj { as := a }).mapCocone E
+    let hE' : IsColimit E' := (isColimitOfPreserves ((evaluation (Discrete α) C).obj { as := a }) hE)
+    apply hE'.hom_ext
+    intro j
+    simp only [hE'.fac, hE'.fac_assoc]
+    simp only [comp_obj, evaluation_obj_obj, foo_pt, foo_ι_app, const_obj_obj, discreteToFinset_obj, Category.assoc]
+    simp only [comp_obj, evaluation_obj_obj, Category.assoc, ← T.pt.map_comp]
+    rfl
+
+end preservesColimitAux
+
+noncomputable
+def preservesColimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] 
+    (J : Type) [SmallCategory J] [FinCategory J] : 
   PreservesColimitsOfShape J (discreteToFinset (C := C) α) where
     preservesColimit {K} := {
       preserves := fun {E} hE => {
-        desc := fun T => {
-          app := fun A => Sigma.desc fun ⟨q, hq⟩ => 
-            let K' := K ⋙ (evaluation _ _).obj ⟨q⟩ 
-            let E' : Cocone K' := Functor.mapCocone ((evaluation _ _).obj ⟨q⟩) E
-            let hE' : IsColimit E' := isColimitOfPreserves _ hE
-            by
-              dsimp
-              refine hE'.desc ⟨_, fun j => ?_, ?_⟩ 
-              · dsimp
-                refine ?_ ≫ (T.ι.app j).app {q} ≫ T.pt.map (homOfLE <| by simpa)
-                · dsimp [discreteToFinset]
-                  refine Sigma.ι (fun (s : ({q} : Finset α)) => (K.obj j).obj ⟨s⟩) ⟨q, by simp⟩
-              · intros X Y f
-                simp only [id_eq, Category.comp_id]
-                rw [←(Cocone.w T f)]
-                simp
-          naturality := sorry
-        }
-        fac := sorry
-        uniq := sorry
+        desc := fun T => preservesColimitAux.desc _ _
+        fac := by
+          intro S j
+          ext A
+          simp only [comp_obj, discreteToFinset_obj, coproductColimitDiagram_obj, mapCocone_pt, const_obj_obj,
+            mapCocone_ι_app, discreteToFinset_map, id_eq, evaluation_obj_obj, Finset.le_eq_subset, eq_mpr_eq_cast,
+            comp_map, evaluation_obj_map, const_obj_map, Discrete.functor_obj, Discrete.natTrans_app, NatTrans.comp_app,
+            coproductDiagramNatTrans_app, Eq.ndrec, colimit.map_desc]
+          apply colimit.hom_ext
+          rintro ⟨a,ha⟩ 
+          simp only [Discrete.functor_obj, preservesColimitAux.desc_app, id_eq, comp_obj, evaluation_obj_obj,
+            const_obj_obj, discreteToFinset_obj, coproductColimitDiagram_obj, colimit.map_desc, colimit.ι_desc,
+            Cocones.precompose_obj_pt, Cofan.mk_pt, Cocones.precompose_obj_ι, NatTrans.comp_app, Discrete.natTrans_app,
+            Cofan.mk_ι_app]
+          dsimp only [Discrete.functor_obj, Cocones.precompose_obj_pt, Cofan.mk_pt, Cocones.precompose_obj_ι,
+            NatTrans.comp_app, const_obj_obj, Discrete.natTrans_app, Cofan.mk_ι_app]
+          let E' := ((evaluation (Discrete α) C).obj { as := a }).mapCocone E
+          let hE' : IsColimit E' := (isColimitOfPreserves ((evaluation (Discrete α) C).obj { as := a }) hE)
+          change E'.ι.app _ ≫ _ = _
+          rw [hE'.fac]
+          simp only [comp_obj, evaluation_obj_obj]
+          simp only [preservesColimitAux.foo_pt, preservesColimitAux.foo_ι_app, comp_obj, evaluation_obj_obj,
+            const_obj_obj, discreteToFinset_obj]
+          rw [← NatTrans.naturality, ← Category.assoc]
+          congr 1
+          simp
+        uniq := by
+          intro S m hm
+          ext A
+          dsimp
+          apply Sigma.hom_ext
+          rintro ⟨a,ha⟩ 
+          simp only [colimit.ι_desc]
+          dsimp
+          let E' := ((evaluation (Discrete α) C).obj { as := a }).mapCocone E
+          let hE' : IsColimit E' := (isColimitOfPreserves ((evaluation (Discrete α) C).obj { as := a }) hE)
+          apply hE'.hom_ext ; intro j
+          rw [hE'.fac]
+          dsimp
+          specialize hm j
+          apply_fun (fun e => e.app {a}) at hm
+          dsimp at hm
+          rw [← hm]
+          simp only [Category.assoc, ι_colimMap_assoc, Discrete.functor_obj, Discrete.natTrans_app]
+          congr 1
+          rw [← NatTrans.naturality, ← Category.assoc]
+          congr 1
+          simp
       }
     }
-
-#check NatTrans.mk
 
 noncomputable
 def preservesLimitsOfFiniteShapeDiscreteToFinset (α : Type v) [HasColimits C] (J : Type) [SmallCategory J] [FinCategory J] : 
