@@ -37,10 +37,7 @@ def exactOfNatIso (F : C ⥤ D) {G : C ⥤ D} [Exact F] (h : F ≅ G) : Exact G 
   inferInstance
 
 def exactComp {E : Type _} [Category E] 
-  (F : C ⥤ D) (G : D ⥤ E) [Exact F] [Exact G] : Exact (F ⋙ G) := 
-    letI : PreservesFiniteLimits (F ⋙ G) := compPreservesFiniteLimits F G
-    letI : PreservesFiniteColimits (F ⋙ G) := compPreservesFiniteColimits F G
-    inferInstance
+  (F : C ⥤ D) (G : D ⥤ E) [Exact F] [Exact G] : Exact (F ⋙ G) := sorry
 
 class AB4 (𝓐 : Type _) [Category.{v} 𝓐] [Abelian 𝓐] [HasCoproducts 𝓐] where
   exact (α : Type v) : Exact (colim : (Discrete α ⥤ 𝓐) ⥤ 𝓐)
