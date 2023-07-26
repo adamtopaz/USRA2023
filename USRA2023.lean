@@ -63,8 +63,7 @@ def isLimitLimitCone : IsLimit (limitCone F) where
         apply Subtype.ext
         funext
         dsimp
-        simp only [map_mul]
-        rfl } 
+        simp only [map_mul] } 
   fac := by 
     intro E j
     ext
@@ -79,6 +78,7 @@ def isLimitLimitCone : IsLimit (limitCone F) where
     apply_fun (fun t => t e) at hm
     exact hm
 
+noncomputable
 example : PreservesLimits (forget GroupCat) := by
   constructor
   intro J _
