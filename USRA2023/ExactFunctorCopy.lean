@@ -329,7 +329,7 @@ namespace preservesLimitAux
 
 @[simps]
 noncomputable
-def foo'' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] [HasZeroMorphisms C]
+def foo' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] [HasZeroMorphisms C]
     [HasFiniteBiproducts C]
     {K : J ⥤ Discrete α ⥤ C} (T : Cone (K ⋙ discreteToFinset α)) 
     {A : Finset α} (q : α) (hq : q ∈ A) :
@@ -359,17 +359,19 @@ def lift {α : Type v} [HasColimits C] [Abelian C] {J : Type} [SmallCategory J] 
     let K' := K ⋙ (evaluation _ _).obj ⟨q⟩ 
     let E' : Cone K' := Functor.mapCone ((evaluation _ _).obj ⟨q⟩) E
     let hE' : IsLimit E' := isLimitOfPreserves _ hE
-    by exact hE'.lift (foo'' T q hq)
-  naturality := fun i j f => by {
+    by exact hE'.lift (foo' T q hq)
+  naturality := fun i j f => by 
+    dsimp
     apply Sigma.hom_ext' ; rintro ⟨a, ha⟩
-    simp only [Category.assoc, coproductColimitDiagramMap]
     let E' := ((evaluation (Discrete α) C).obj { as := a }).mapCone E
     let hE' : IsLimit E' := (isLimitOfPreserves ((evaluation (Discrete α) C).obj { as := a }) hE)
     apply hE'.hom_ext
     intro jj
-    simp only [hE'.fac, hE'.fac_assoc]
+    simp only [hE'.fac, hE'.fac_assoc, Sigma.π, comp_obj, evaluation_obj_obj, mapCone_pt, mapCone_π_app, evaluation_obj_map, Category.assoc,
+      biproduct.isoCoproduct_hom, coproductColimitDiagramMap, Iso.inv_hom_id_assoc, biproduct.lift_π_assoc,
+      Iso.inv_hom_id_assoc, biproduct.lift_π_assoc, isLimitOfPreserves]
     sorry
-  }
+  
 
 end preservesLimitAux
 
@@ -384,6 +386,8 @@ instance preservesLimitsOfShapeDiscreteToFinset (α : Type v) [Abelian C] [HasCo
         uniq := sorry
       }
     }
+
+#check biproduct.lift
 
 noncomputable
 def exactDiscreteToFinset (α : Type v) [HasColimits C] [Abelian C] 
