@@ -312,7 +312,7 @@ namespace preservesLimitAux
 
 @[simps]
 noncomputable
-def foo' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] [HasZeroMorphisms C]
+def foo'' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory J] [HasZeroMorphisms C]
     [HasFiniteBiproducts C]
     {K : J ⥤ Discrete α ⥤ C} (T : Cone (K ⋙ discreteToFinset α)) 
     {A : Finset α} (q : α) (hq : q ∈ A) :
@@ -348,7 +348,7 @@ def desc' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategor
       let K' := K ⋙ (evaluation _ _).obj ⟨q⟩
       let E' : Cone K' := Functor.mapCone ((evaluation _ _).obj ⟨q⟩) E
       let hE' : IsLimit E' := sorry--isLimitOfPreserves _ hE
-      exact hE'.lift (foo' T q hq)
+      exact hE'.lift (foo'' T q hq)
     let γ := biproduct.lift h
     by exact (γ ≫ g)
   naturality := by
@@ -380,12 +380,13 @@ def foo {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory 
     Cocone (K ⋙ (evaluation _ _).obj ⟨q⟩) where
   pt := T.pt.obj A
   ι := {
-    app := fun j => Sigma.ι (fun (s : ({q} : Finset α)) => (K.obj j).obj ⟨s⟩) ⟨q, by simp⟩ ≫ 
-      (T.ι.app j).app {q} ≫ T.pt.map (homOfLE <| by simpa)
+    app := fun j => Sigma.ι (fun (s : A) => (K.obj j).obj ⟨s⟩) ⟨q,hq⟩ ≫ (T.ι.app j).app A 
+      --Sigma.ι (fun (s : ({q} : Finset α)) => (K.obj j).obj ⟨s⟩) ⟨q, by simp⟩ ≫ 
+      --(T.ι.app j).app {q} ≫ T.pt.map (homOfLE <| by simpa)
     naturality := fun i j f => by
       simp only [Category.comp_id]
       have Tw := T.w f
-      apply_fun (fun e => e.app {q}) at Tw
+      apply_fun (fun e => e.app A) at Tw
       simp [← Tw]
   }
 
@@ -412,7 +413,10 @@ def desc {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory
     simp only [hE'.fac, hE'.fac_assoc]
     simp only [comp_obj, evaluation_obj_obj, foo_pt, foo_ι_app, const_obj_obj, discreteToFinset_obj, Category.assoc]
     simp only [comp_obj, evaluation_obj_obj, Category.assoc, ← T.pt.map_comp]
-    rfl
+    rw [← NatTrans.naturality]
+    dsimp [coproductColimitDiagramMap]
+    simp
+    
 
 end preservesColimitAux
 
@@ -445,9 +449,6 @@ instance preservesColimitsOfShapeDiscreteToFinset (α : Type v) [HasColimits C]
           simp only [comp_obj, evaluation_obj_obj]
           simp only [preservesColimitAux.foo_pt, preservesColimitAux.foo_ι_app, comp_obj, evaluation_obj_obj,
             const_obj_obj, discreteToFinset_obj]
-          rw [← NatTrans.naturality, ← Category.assoc]
-          congr 1
-          simp
         uniq := by
           intro S m hm
           ext A
@@ -462,14 +463,10 @@ instance preservesColimitsOfShapeDiscreteToFinset (α : Type v) [HasColimits C]
           rw [hE'.fac]
           dsimp
           specialize hm j
-          apply_fun (fun e => e.app {a}) at hm
+          apply_fun (fun e => e.app A) at hm
           dsimp at hm
           rw [← hm]
           simp only [Category.assoc, ι_colimMap_assoc, Discrete.functor_obj, Discrete.natTrans_app]
-          congr 1
-          rw [← NatTrans.naturality, ← Category.assoc]
-          congr 1
-          simp
       }
     }
 
@@ -485,7 +482,6 @@ def foo' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory
   pt := T.pt.obj A
   π := {
     app := fun j => (T.π.app j).app A ≫ Sigma.π (fun s : A => (K.obj j).obj ⟨s⟩) ⟨q, hq⟩
-
     naturality := fun i j f => by 
       simp only [Category.comp_id]
       have Tw := T.w f
@@ -493,14 +489,20 @@ def foo' {α : Type v} [HasColimits C] {J : Type} [SmallCategory J] [FinCategory
       simp [← Tw, Sigma.π]
       congr 1
       apply Sigma.hom_ext ; intro b
-      letI : DecidableEq {x // x ∈ A} := Classical.decEq { x // x ∈ A }
-      have := biproduct.ι_π (fun s : {x // x ∈ A} => (K.obj i).obj { as := ↑s }) b ⟨q, hq⟩
-      aesop_cat -- wasn't sure how to manipulate the previous line to close the goal, so I just used aesop_cat
+      --letI : DecidableEq {x // x ∈ A} := Classical.decEq { x // x ∈ A }
+      classical
+      --have := biproduct.ι_π (fun s : {x // x ∈ A} => (K.obj i).obj { as := ↑s }) b ⟨q, hq⟩
+      simp [biproduct.ι_π, biproduct.ι_π_assoc]
+      split_ifs with h 
+      · subst h ; simp
+      · simp
   }
 
 @[simps]
 noncomputable
-def lift {α : Type v} [HasColimits C] [Abelian C] {J : Type} [SmallCategory J] [FinCategory J]
+def lift {α : Type v} [HasColimits C] 
+    [HasFiniteLimits C] [HasZeroMorphisms C] [HasFiniteBiproducts C] 
+    {J : Type} [SmallCategory J] [FinCategory J]
     {K : J ⥤ Discrete α ⥤ C} {E : Cone K} (hE : IsLimit E) (T : Cone (K ⋙ discreteToFinset α)) :
      T.pt ⟶ ((discreteToFinset α).mapCone E).pt where
   app := fun A => Sigma.lift fun ⟨q, hq ⟩ => 
@@ -518,8 +520,12 @@ def lift {α : Type v} [HasColimits C] [Abelian C] {J : Type} [SmallCategory J] 
     simp only [hE'.fac, hE'.fac_assoc, Sigma.π, comp_obj, evaluation_obj_obj, mapCone_pt, mapCone_π_app, evaluation_obj_map, Category.assoc,
       biproduct.isoCoproduct_hom, coproductColimitDiagramMap, Iso.inv_hom_id_assoc, biproduct.lift_π_assoc,
       Iso.inv_hom_id_assoc, biproduct.lift_π_assoc, isLimitOfPreserves]
+    dsimp [Sigma.isoBiproduct, IsColimit.coconePointUniqueUpToIso]
+    have := (PreservesLimit.preserves hE).fac (foo' T a ha) jj
+    dsimp at this
+    rw [this]
+    simp [coproductColimitDiagramMap]
     sorry
-  
 
 end preservesLimitAux
 
